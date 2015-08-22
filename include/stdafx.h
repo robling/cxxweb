@@ -1,0 +1,21 @@
+// STL
+#include <utility>
+#include <cassert>
+#include <cstdint>
+#include <limits>
+#include <functional>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <algorithm>
+#include <vector>
+#include <random>
+#include <ctime>
+#include <chrono>
+
+// Boost
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/spawn.hpp>
+#include <boost/coroutine/all.hpp>

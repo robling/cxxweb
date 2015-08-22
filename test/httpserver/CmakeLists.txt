@@ -1,0 +1,17 @@
+# Include files
+SET(HEADERS ../../include/stdafx.h
+			../../include/http.hpp
+			../../include/request.hpp
+			../../include/respond.hpp
+			../../include/content_type.hpp)
+SOURCE_GROUP(include FILES ${HEADERS})
+
+# Source files
+SET(Http_Server server.cpp 
+				../../src/http.cpp
+				../../src/request.cpp
+				../../src/respond.cpp)
+SOURCE_GROUP(source FILES ${Http_Server})
+
+ADD_EXECUTABLE(HttpServer ${HEADERS} ${Http_Server})
+TARGET_LINK_LIBRARIES(HttpServer ${Boost_LIBRARIES})
