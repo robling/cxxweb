@@ -37,8 +37,8 @@ namespace cxxweb
 		void stop(session_ptr s);
 		void stop_all();
 		size_t get_count();
-	private:
 		void gc_loop();
+	private:
 		http& server_;
 		boost::asio::io_service::strand strand_;
 		std::unordered_set<session_ptr> session_pool;

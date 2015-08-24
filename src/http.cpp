@@ -52,7 +52,6 @@ void cxxweb::session::go()
 
 cxxweb::session_manager::session_manager(http& server) : server_(server), strand_(server.get_io_service())
 {
-	this->gc_loop();
 }
 
 cxxweb::session_manager::~session_manager()
@@ -110,19 +109,24 @@ size_t cxxweb::session_manager::get_count()
 
 void cxxweb::session_manager::gc_loop()
 {
-	boost::asio::steady_timer timer_(this->strand_.get_io_service());
-	spawn(this->strand_, [this, &timer_](yield_context yield) {
+	spawn(this->strand_, [this](yield_context yield) {
+		boost::asio::steady_timer timer_(this->strand_.get_io_service());
+		//timer_.expires_from_now(std::chrono::seconds(3));
 		for (;;)
 		{
-			for (auto& s_p : this->session_pool)
+			boost::system::error_code ec;
+			timer_.async_wait(yield);
+			for (auto s_p = this->session_pool.begin(); s_p != session_pool.end(); )
 			{
-				boost::system::error_code ec;
-				timer_.async_wait(yield[ec]);
-				if (s_p->timer_.expires_from_now() <= std::chrono::seconds(0))
+				timer_.async_wait(yield);
+				if ((*s_p)->timer_.expires_from_now() <= std::chrono::seconds(0))
 				{
-					this->stop(s_p);
+					s_p = this->session_pool.erase(s_p);
+					continue;
 				}
+				s_p++;
 			}
+			timer_.expires_from_now(std::chrono::seconds(5));
 		}
 	});
 }
@@ -147,7 +151,9 @@ tcp::acceptor & cxxweb::http::get_tcp_acceptor()
 void cxxweb::http::run()
 {
 	this->listern();
+	this->session_manager_->gc_loop();
 	ioservice_.run();
+	
 }
 
 void cxxweb::http::listern()
