@@ -46,7 +46,8 @@ BOOST_AUTO_TEST_CASE(std_theard)
 	future<int> grst = std::async(std::launch::async, []() {std::this_thread::sleep_for(std::chrono::seconds(5));return 100;});
 	auto rst = grst.get();
 	auto end = std::chrono::high_resolution_clock::now();
-	//chrono下面的一些时间操作其实挺好用的，就是命名空间太长，实在太长
+	//useful helper under namespace chrono
+	//but function name is tooooo long
 	std::cout << "Waited:" << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "ms" << std::endl;
 	BOOST_CHECK(rst == 100);
 }

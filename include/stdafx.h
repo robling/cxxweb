@@ -20,3 +20,4 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/coroutine/all.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/logic/tribool.hpp>

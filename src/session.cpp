@@ -1,5 +1,6 @@
 #include "../include/http.hpp"
 #include "../include/session.hpp"
+#include "../include/request.hpp"
 
 using boost::asio::spawn;
 using boost::asio::yield_context;
@@ -30,25 +31,34 @@ cxxweb::session::~session()
 void cxxweb::session::go()
 {
 	auto self = shared_from_this();
+
+	//do async read
 	spawn(strand_, [this, self](yield_context yield) {
 		boost::system::error_code ec;
-		boost::asio::async_write(*(this->socket_), boost::asio::buffer(http200_ + body_), yield[ec]);
-		this->socket_->shutdown(tcp::socket::shutdown_send);
+		auto n = this->socket_->async_read_some(boost::asio::buffer(buffer_), yield[ec]);
+
+		std::string req(buffer_.data(), n);
+
+		std::cout << "===========\n" << req << std::endl;
+		if (!ec)
+		{
+			//do async write
+			spawn(strand_, [this, self](yield_context yield) {
+				boost::system::error_code ec;
+				boost::asio::async_write(*(this->socket_), boost::asio::buffer(http200_ + body_), yield[ec]);
+				this->socket_->shutdown(tcp::socket::shutdown_send);
+				this->timer_.expires_from_now(std::chrono::seconds(10));
+				//timer_.async_wait(yield);
+				//this->release();
+			});
+		}
 		this->timer_.expires_from_now(std::chrono::seconds(10));
 	});
+}
 
-	//Since asio use stackful coroutine, this method requires toooo much memery
-	/*spawn(strand_, [this, self](yield_context yield) {
-	while (self.use_count() != 1)
-	{
-	boost::system::error_code ec;
-	this->timer_.async_wait(yield[ec]);
-	if (timer_.expires_from_now() <= std::chrono::seconds(0))
-	{
+void cxxweb::session::release()
+{
 	this->manager_.lock()->stop(shared_from_this());
-	}
-	}
-	});*/
 }
 
 cxxweb::session_manager::session_manager(http& server) : server_(server), strand_(server.get_io_service())
@@ -121,7 +131,7 @@ void cxxweb::session_manager::gc_loop()
 			for (auto s_p = this->session_pool.begin(); s_p != session_pool.end(); )
 			{
 				timer_.async_wait(yield);
-				if ((*s_p)->timer_.expires_from_now() <= std::chrono::seconds(0))
+				if ((*s_p)->is_expired())
 				{
 					s_p = this->session_pool.erase(s_p);
 					continue;
